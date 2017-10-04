@@ -1,3 +1,3 @@
-# prototype_safe_app_nodejs
+# safe_app_neon
 
 experimenting with replacing FFI layer

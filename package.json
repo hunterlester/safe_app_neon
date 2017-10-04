@@ -1,5 +1,5 @@
 {
-  "name": "prototype_safe_app_nodejs",
+  "name": "safe_app_neon",
   "version": "0.1.0",
   "description": "experimenting with replacing FFI layer",
   "main": "lib/index.js",

@@ -20,8 +20,12 @@ fn hello(call: Call) -> JsResult<JsString> {
 fn encode_auth_req(req: AuthReq) -> String {
   let req_id = ipc::gen_req_id();
   let ipc_req = IpcReq::Auth(req);
-  let ipc_msg = IpcMsg::Req { req_id: req_id, req: ipc_req};
-  let payload = base64_encode(&serialise(&ipc_msg)?);
+  let ipc_msg = &IpcMsg::Req { req_id: req_id, req: ipc_req};
+  println!("{:?}", &ipc_msg);
+  let serialised_ipc_msg = serialise(ipc_msg).unwrap();
+  println!("{:?}", &serialised_ipc_msg);
+  let payload = base64_encode(&serialised_ipc_msg);
+  println!("{:?}", payload);
   format!("safe-auth:{}", payload)
 }
 
@@ -34,7 +38,7 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
   permissions.insert(Permission::ManagePermissions);
 
   let mut container_permissions = HashMap::new();
-  container_permissions.insert("_public", permissions);
+  container_permissions.insert(String::from("_public"), permissions);
 
   let auth_request = AuthReq {
     app: AppExchangeInfo {
@@ -47,12 +51,13 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
     containers: container_permissions,
   };
 
-  let authUri = encode_auth_req(auth_request);
+  let auth_uri = encode_auth_req(auth_request);
   let scope = call.scope;
-  Ok(JsString::new(scope, authUri.as_str()).unwrap())
+  Ok(JsString::new(scope, auth_uri.as_str()).unwrap())
 }
 
 register_module!(m, {
     m.export("hello", hello)?;
     m.export("gen_auth_uri", gen_auth_uri)?;
+    Ok(())
 });
