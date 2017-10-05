@@ -21,11 +21,8 @@ fn encode_auth_req(req: AuthReq) -> String {
   let req_id = ipc::gen_req_id();
   let ipc_req = IpcReq::Auth(req);
   let ipc_msg = &IpcMsg::Req { req_id: req_id, req: ipc_req};
-  println!("{:?}", &ipc_msg);
   let serialised_ipc_msg = serialise(ipc_msg).unwrap();
-  println!("{:?}", &serialised_ipc_msg);
   let payload = base64_encode(&serialised_ipc_msg);
-  println!("{:?}", payload);
   format!("safe-auth:{}", payload)
 }
 
