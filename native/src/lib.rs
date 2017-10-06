@@ -3,18 +3,36 @@ extern crate neon;
 extern crate safe_core;
 extern crate maidsafe_utilities;
 extern crate ffi_utils;
+extern crate system_uri;
 
-use neon::vm::{Call, JsResult};
-use neon::js::JsString;
+use neon::vm::{ Call, JsResult };
+use neon::js::{ JsString };
 
 use safe_core::ipc::{ self, AuthReq, IpcReq, IpcMsg, Permission, AppExchangeInfo };
 use ffi_utils::{ base64_encode };
 use maidsafe_utilities::serialisation::{ serialise };
 use std::collections::{ HashMap, BTreeSet };
+use system_uri::{ App, install as uri_install };
 
-fn hello(call: Call) -> JsResult<JsString> {
-    let scope = call.scope;
-    Ok(JsString::new(scope, "hello node").unwrap())
+fn install(call: Call) -> JsResult<JsString> {
+  let scope = call.scope;
+  let exec_path = call.arguments.require(scope, 0)?.check::<JsString>()?;
+  let app = App::new(
+      String::from("test.id.neon"),
+      String::from("MAIDSAFE"),
+      String::from("TEST APP"),
+      exec_path.value(),
+      Some(String::from("test")),
+  );
+  let schemes = String::from("safe-dgvzdc5pzc5uzw9u");
+  uri_install(
+    &app,
+    &schemes
+        .split(',')
+        .map(|s| s.to_string())
+        .collect::<Vec<_>>(),
+  );
+  Ok(JsString::new(scope, "URI registry complete").unwrap())
 }
 
 fn encode_auth_req(req: AuthReq) -> String {
@@ -54,7 +72,7 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
 }
 
 register_module!(m, {
-    m.export("hello", hello)?;
+    m.export("install", install)?;
     m.export("gen_auth_uri", gen_auth_uri)?;
     Ok(())
 });
