@@ -17,11 +17,9 @@ use std::collections::{ HashMap, BTreeSet };
 use system_uri::{ App, install as uri_install };
 use serde_json::{ Value, Error };
 
-//impl From<Error> for Throw {
-//  fn from(e: Error) -> Throw {
-//        Throw
-//    }
-//}
+impl From<Error> for Throw {
+  fn from(e: Error) -> Throw {}
+}
 
 fn install(call: Call) -> JsResult<JsString> {
   let scope = call.scope;
