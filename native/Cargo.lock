@@ -7,6 +7,7 @@ dependencies = [
  "neon 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "neon-build 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "safe_core 0.27.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "system_uri 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
