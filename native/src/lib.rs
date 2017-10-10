@@ -65,11 +65,12 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
 
   let app_info_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
   let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
+  println!("appInfo for gen_auth_uri: {:?}", &app_info);
 
   let auth_request = AuthReq {
     app: AppExchangeInfo {
       id: String::from(app_info["id"].as_str().unwrap()),
-      scope: Some(String::from(app_info["scope"].as_str().unwrap())),
+      scope: None,
       name: String::from(app_info["name"].as_str().unwrap()),
       vendor: String::from(app_info["vendor"].as_str().unwrap()),
     },
@@ -77,7 +78,10 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
     containers: container_permissions,
   };
 
+  println!("auth_request for gen_auth_uri: {:?}", &auth_request);
+
   let auth_uri = encode_auth_req(auth_request);
+  println!("auth_uri for gen_auth_uri: {:?}", &auth_uri);
   Ok(JsString::new(scope, auth_uri.as_str()).unwrap())
 }
 
