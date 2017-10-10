@@ -6,8 +6,9 @@ extern crate ffi_utils;
 extern crate system_uri;
 extern crate serde_json;
 
-use neon::vm::{ Call, JsResult, Throw };
+use neon::vm::{ Call, JsResult };
 use neon::js::{ JsString };
+use neon::js::error::{ JsError, Kind };
 use std::convert::From;
 
 use safe_core::ipc::{ self, AuthReq, IpcReq, IpcMsg, Permission, AppExchangeInfo };
@@ -15,16 +16,12 @@ use ffi_utils::{ base64_encode };
 use maidsafe_utilities::serialisation::{ serialise };
 use std::collections::{ HashMap, BTreeSet };
 use system_uri::{ App, install as uri_install };
-use serde_json::{ Value, Error };
-
-impl From<Error> for Throw {
-  fn from(e: Error) -> Throw {}
-}
+use serde_json::{ Value };
 
 fn install(call: Call) -> JsResult<JsString> {
   let scope = call.scope;
   let app_info_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
-  let app_info: Value = serde_json::from_str(&app_info_string)?;
+  let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
   println!("install app info: {:?}", &app_info);
   let app = App::new(
       String::from(app_info["id"].as_str().unwrap()),
@@ -41,7 +38,7 @@ fn install(call: Call) -> JsResult<JsString> {
         .split(',')
         .map(|s| s.to_string())
         .collect::<Vec<_>>(),
-  );
+  ).unwrap();
   Ok(JsString::new(scope, "URI registry complete").unwrap())
 }
 
@@ -67,7 +64,7 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
   container_permissions.insert(String::from("_public"), permissions);
 
   let app_info_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
-  let app_info: Value = serde_json::from_str(&app_info_string)?;
+  let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
 
   let auth_request = AuthReq {
     app: AppExchangeInfo {
@@ -81,7 +78,6 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
   };
 
   let auth_uri = encode_auth_req(auth_request);
-  let scope = call.scope;
   Ok(JsString::new(scope, auth_uri.as_str()).unwrap())
 }
 
