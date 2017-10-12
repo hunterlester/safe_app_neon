@@ -8,7 +8,7 @@ dependencies = [
  "neon-build 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
  "safe_core 0.27.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "system_uri 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "system_uri 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1068,7 +1068,7 @@ dependencies = [
 
 [[package]]
 name = "system_uri"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "error-chain 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1522,7 +1522,7 @@ dependencies = [
 "checksum syntex_errors 0.58.1 (registry+https://github.com/rust-lang/crates.io-index)" = "867cc5c2d7140ae7eaad2ae9e8bf39cb18a67ca651b7834f88d46ca98faadb9c"
 "checksum syntex_pos 0.58.1 (registry+https://github.com/rust-lang/crates.io-index)" = "13ad4762fe52abc9f4008e85c4fb1b1fe3aa91ccb99ff4826a439c7c598e1047"
 "checksum syntex_syntax 0.58.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6e0e4dbae163dd98989464c23dd503161b338790640e11537686f2ef0f25c791"
-"checksum system_uri 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3d09c809bd8cb215e707e071dd5e26452ff7625100ce8071ba298f5b9e9137b5"
+"checksum system_uri 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a21bb31ff470c6e8e3e2ed627e49b685ba08005b2d67ecea5766769d5cc8df06"
 "checksum tar 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)" = "281285b717926caa919ad905ef89c63d75805c7d89437fb873100925a53f2b1b"
 "checksum term 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "fa63644f74ce96fbeb9b794f66aff2a52d601cbd5e80f4b97123e3899f4570f1"
 "checksum term_size 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2b6b55df3198cc93372e85dd2ed817f0e38ce8cc0f22eb32391bfad9c4bf209"
