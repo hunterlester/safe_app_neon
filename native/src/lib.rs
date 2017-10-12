@@ -80,7 +80,8 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
       container_permissions.insert(String::from(key), permissions);
   }
 
-  let own_container = call.arguments.require(scope, 1)?.check::<JsBoolean>()?.value();
+  let own_container = call.arguments.require(scope, 2)?.check::<JsBoolean>()?.value();
+  println!("own_container: {:?}", own_container);
 
   let auth_request = AuthReq {
     app: AppExchangeInfo {
