@@ -7,7 +7,7 @@ extern crate system_uri;
 extern crate serde_json;
 
 use neon::vm::{ Call, JsResult };
-use neon::js::{ JsString };
+use neon::js::{ JsString, JsBoolean };
 use neon::js::error::{ JsError, Kind };
 use std::convert::From;
 
@@ -53,19 +53,35 @@ fn encode_auth_req(req: AuthReq) -> String {
 
 fn gen_auth_uri(call: Call) -> JsResult<JsString> {
   let scope = call.scope;
-  let mut permissions = BTreeSet::new();
-  permissions.insert(Permission::Read);
-  permissions.insert(Permission::Insert);
-  permissions.insert(Permission::Update);
-  permissions.insert(Permission::Delete);
-  permissions.insert(Permission::ManagePermissions);
-
-  let mut container_permissions = HashMap::new();
-  container_permissions.insert(String::from("_public"), permissions);
 
   let app_info_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
   let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
   println!("appInfo for gen_auth_uri: {:?}", &app_info);
+
+  let mut container_permissions = HashMap::new();
+  let permissions_string = call.arguments.require(scope, 1)?.check::<JsString>()?.value();
+  let permissions_object: Value = serde_json::from_str(&permissions_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
+
+  let keys: Vec<&str> = permissions_object.as_object().unwrap().keys().map(|key| key.as_str()).collect();
+  for key in keys {
+      let mut permissions = BTreeSet::new();
+
+      let perms_vec: &Vec<Value> = permissions_object.get(key).unwrap().as_array().unwrap();
+      for perm in perms_vec {
+        match perm.as_str().unwrap() {
+            "Read" => permissions.insert(Permission::Read),
+            "Insert" => permissions.insert(Permission::Insert),
+            "Update" => permissions.insert(Permission::Update),
+            "Delete" => permissions.insert(Permission::Delete),
+            "ManagePermissions" => permissions.insert(Permission::ManagePermissions),
+            _ => false,
+        };
+      }
+      container_permissions.insert(String::from(key), permissions);
+  }
+
+  let own_container = call.arguments.require(scope, 2)?.check::<JsBoolean>()?.value();
+  println!("own_container: {:?}", own_container);
 
   let auth_request = AuthReq {
     app: AppExchangeInfo {
@@ -74,7 +90,7 @@ fn gen_auth_uri(call: Call) -> JsResult<JsString> {
       name: String::from(app_info["name"].as_str().unwrap()),
       vendor: String::from(app_info["vendor"].as_str().unwrap()),
     },
-    app_container: true,
+    app_container: own_container,
     containers: container_permissions,
   };
 
