@@ -13,9 +13,24 @@ use self::serde_json::{ Value };
 use std::convert::From;
 use std::collections::{ HashMap, BTreeSet };
 
-use self::safe_core::ipc::{ self, AuthReq, IpcReq, IpcMsg, Permission, AppExchangeInfo };
+use self::safe_core::ipc::{ self, AuthReq, IpcReq, IpcResp, IpcMsg, Permission, AppExchangeInfo };
 use self::ffi_utils::{ base64_encode };
 use self::maidsafe_utilities::serialisation::{ serialise };
+
+pub fn decode_ipc_msg(call: Call) -> JsResult<JsString> {
+    let scope = call.scope;
+    let uri_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
+    let msg = ipc::decode_msg(&uri_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while decoding IPC message: {:?}", e).as_str()))?;;
+    println!("decoded msg: {:?}", &msg);
+    match msg {
+        IpcMsg::Resp {
+            resp: IpcResp::Auth(res),
+            req_id,
+        } => println!("ipcResp: {:?}, req_id: {:?}", res, req_id),
+        _ => (),
+    }
+    Ok(JsString::new(scope, "URI opened").unwrap())
+}
 
 // TODO: move functions like this into a separate crate concerning only safe_client_libs Rust API
 fn encode_auth_req(req: AuthReq) -> String {
