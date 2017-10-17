@@ -1,35 +1,43 @@
-extern crate neon;
-extern crate safe_core;
-extern crate maidsafe_utilities;
-extern crate ffi_utils;
-extern crate serde_json;
+use neon::vm::{ Call, JsResult };
+use neon::js::{ JsString, JsBoolean, JsInteger, JsArray };
+use neon::js::error::{ JsError, Kind };
 
-use self::neon::vm::{ Call, JsResult };
-use self::neon::js::{ JsString, JsBoolean };
-use self::neon::js::error::{ JsError, Kind };
-
-use self::serde_json::{ Value };
+use serde_json::{ self, Value };
 
 use std::convert::From;
 use std::collections::{ HashMap, BTreeSet };
 
-use self::safe_core::ipc::{ self, AuthReq, IpcReq, IpcResp, IpcMsg, Permission, AppExchangeInfo };
-use self::ffi_utils::{ base64_encode };
-use self::maidsafe_utilities::serialisation::{ serialise };
+use safe_core::ipc::{ self, AuthReq, IpcReq, IpcResp, IpcMsg, Permission, AppExchangeInfo };
+use ffi_utils::{ base64_encode };
+use maidsafe_utilities::serialisation::{ serialise };
+use safe_app::{ App };
 
-pub fn decode_ipc_msg(call: Call) -> JsResult<JsString> {
-    let scope = call.scope;
-    let uri_string = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
-    let msg = ipc::decode_msg(&uri_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while decoding IPC message: {:?}", e).as_str()))?;;
+fn decode_ipc_msg(app_id: String, uri_string: String) -> App {
+    let msg = ipc::decode_msg(&uri_string).unwrap();
     println!("decoded msg: {:?}", &msg);
     match msg {
         IpcMsg::Resp {
             resp: IpcResp::Auth(res),
             req_id,
-        } => println!("ipcResp: {:?}, req_id: {:?}", res, req_id),
-        _ => (),
+        } => {
+            match res {
+                Ok(auth_granted) => App::registered(app_id, auth_granted, move |event| {println!("Network state: {:?}", event)}).unwrap(),
+                Err(err) => println!("IpcResp::Auth error: {:?}", err)
+                // TODO: Fix these match arms
+            }
+        }
     }
-    Ok(JsString::new(scope, "URI opened").unwrap())
+
+}
+
+pub fn connect(call: Call) -> JsResult<JsString> {
+    let scope = call.scope;
+    let app_info_string: String = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
+    let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
+    let uri_string = call.arguments.require(scope, 1)?.check::<JsString>()?.value();
+    let app = decode_ipc_msg(String::from(app_info["id"].as_str().unwrap()), uri_string);
+    // QUESTION: How to return app as a data type that may be passed to JS?
+    Ok(JsString::new(scope, "connected to network").unwrap())
 }
 
 // TODO: move functions like this into a separate crate concerning only safe_client_libs Rust API

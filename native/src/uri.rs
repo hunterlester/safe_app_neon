@@ -1,14 +1,10 @@
-extern crate neon;
-extern crate system_uri;
-extern crate serde_json;
+use neon::js::{ JsString };
+use neon::vm::{ Call, JsResult };
+use neon::js::error::{ JsError, Kind };
 
-use self::neon::js::{ JsString };
-use self::neon::vm::{ Call, JsResult };
-use self::neon::js::error::{ JsError, Kind };
+use serde_json::{ self, Value };
 
-use self::serde_json::{ Value };
-
-use self::system_uri::{ App, install as uri_install, open as uri_open };
+use system_uri::{ App, install as uri_install, open as uri_open };
 
 pub fn open(call: Call) -> JsResult<JsString> {
     let scope = call.scope;
