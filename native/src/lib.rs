@@ -18,6 +18,5 @@ register_module!(m, {
     m.export("install", install)?;
     m.export("gen_auth_uri", gen_auth_uri)?;
     m.export("open", open)?;
-    m.export("connect", connect)?;
     Ok(())
 });

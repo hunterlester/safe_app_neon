@@ -1,18 +1,43 @@
 use neon::vm::{ Call, JsResult };
+// Lock
 use neon::js::{ JsString, JsBoolean, JsInteger, JsArray };
 use neon::js::error::{ JsError, Kind };
+use neon::js::binary::{ JsBuffer };
 
 use serde_json::{ self, Value };
 
 use std::convert::From;
 use std::collections::{ HashMap, BTreeSet };
 
-use safe_core::ipc::{ self, AuthReq, IpcReq, IpcResp, IpcMsg, Permission, AppExchangeInfo };
+use safe_core::ipc::{ self, AuthReq, IpcReq, IpcResp, IpcMsg, Permission, AppExchangeInfo, IpcError };
 use ffi_utils::{ base64_encode };
 use maidsafe_utilities::serialisation::{ serialise };
-use safe_app::{ App };
+use safe_app::{ App, AppError };
 
-fn decode_ipc_msg(app_id: String, uri_string: String) -> App {
+// reference : https://github.com/dherman/neon-class-example/blob/master/native/src/lib.rs
+declare_types! {
+    pub class JsApp for App {
+        // init will connect application to network and return App struct
+        init(call) {
+            let scope = call.scope;
+            let app_info_string: String = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
+            let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
+            let uri_string = call.arguments.require(scope, 1)?.check::<JsString>()?.value();
+            let app = decode_ipc_msg(String::from(app_info["id"].as_str().unwrap()), uri_string).unwrap();
+            Ok(app)
+        }
+        // Declare methods here that utilise App struct
+        // method generic(call) {
+        //     let scope = call.scope;
+        //     let output = call.arguments.this(scope).grab(|app| {
+        //         network_fn(app, arg1, arg2)
+        //     });
+        //     Ok(output)
+        // }
+    }
+}
+
+fn decode_ipc_msg(app_id: String, uri_string: String) -> Result<???, AppError> {
     let msg = ipc::decode_msg(&uri_string).unwrap();
     println!("decoded msg: {:?}", &msg);
     match msg {
@@ -21,23 +46,42 @@ fn decode_ipc_msg(app_id: String, uri_string: String) -> App {
             req_id,
         } => {
             match res {
-                Ok(auth_granted) => App::registered(app_id, auth_granted, move |event| {println!("Network state: {:?}", event)}).unwrap(),
-                Err(err) => println!("IpcResp::Auth error: {:?}", err)
-                // TODO: Fix these match arms
+                Ok(auth_granted) => App::registered(app_id, auth_granted, move |event| {println!("Network state: {:?}", event)}),
+                Err(err) => Err(AppError::from(err)),
             }
+        },
+        IpcMsg::Resp {
+            resp: IpcResp::Containers(res),
+            req_id,
+        } => {
+            match res {
+                Ok(()) => req_id,
+                Err(err) => AppError::from(err)
+            }
+        },
+        IpcMsg::Resp {
+            resp: IpcResp::Unregistered(res),
+            req_id,
+        } => {
+            match res {
+                Ok(bootstrap_cfg) => serialise(&bootstrap_cfg)?,
+                Err(err) => AppError::from(err)
+            }
+        },
+        IpcMsg::Resp {
+            resp: IpcResp::ShareMData(res),
+            req_id,
+        } => {
+            match res {
+                Ok(()) => req_id,
+                Err(err) => AppError::from(err),
+            }
+        },
+        IpcMsg::Revoked { .. } => app_id,
+        _ => {
+            return Err(IpcError::InvalidMsg.into());
         }
     }
-
-}
-
-pub fn connect(call: Call) -> JsResult<JsString> {
-    let scope = call.scope;
-    let app_info_string: String = call.arguments.require(scope, 0)?.check::<JsString>()?.value();
-    let app_info: Value = serde_json::from_str(&app_info_string).or_else(|e| JsError::throw(Kind::Error, format!("Error occured while creating JSON object: {:?}", e).as_str()))?;
-    let uri_string = call.arguments.require(scope, 1)?.check::<JsString>()?.value();
-    let app = decode_ipc_msg(String::from(app_info["id"].as_str().unwrap()), uri_string);
-    // QUESTION: How to return app as a data type that may be passed to JS?
-    Ok(JsString::new(scope, "connected to network").unwrap())
 }
 
 // TODO: move functions like this into a separate crate concerning only safe_client_libs Rust API
