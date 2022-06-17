@@ -13,7 +13,7 @@ crate-type = ["dylib"]
 neon-build = "0.1.20"
 
 [dependencies]
-neon = "0.1.20"
+neon = "0.10.1"
 safe_core = "0.27.0"
 maidsafe_utilities = "0.14.1"
 ffi_utils = "0.3.0"
